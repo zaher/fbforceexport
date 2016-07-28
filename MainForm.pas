@@ -13,6 +13,8 @@ type
 
   TForm1 = class(TForm)
     Button1: TButton;
+    DatabaseEdit: TEdit;
+    Label1: TLabel;
     PathEdit: TEdit;
     ResultMemo: TMemo;
     TablesList: TMemo;
@@ -48,6 +50,7 @@ uses
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
+  TablesList.Lines.LoadFromFile(Application.Location + 'tables.txt');
   InitEmbedMode(Application.Location + 'fb/fbembed.dll');
 end;
 
@@ -68,7 +71,7 @@ begin
   ResultMemo.Clear;
   aConnection := TmncFBConnection.Create;
   try
-    aConnection.Resource := 'd:\temp\data.fdb';
+    aConnection.Resource := DatabaseEdit.Text;
     //Connection.CharacterSet := 'WIN1252';
     aConnection.CharacterSet := 'NONE';
     aConnection.UserName := 'sysdba';
@@ -104,6 +107,7 @@ begin
   Connection.CharacterSet := 'NONE';
   Connection.UserName := 'sysdba';
   Connection.Password := 'masterkey';
+  Connection.ErrorHandles := [];
   Connection.Open;
 
   Session := Connection.CreateSession as TmncFBSession;
@@ -132,21 +136,38 @@ procedure TForm1.ExportAll;
 var
   i: Integer;
   s: string;
+  CMD: TmncFBCommand;
 begin
   Cancel := False;
-  DBOpen;
+  //DBOpen;
   try
+//    CMD := Session.CreateCommand as TmncFBCommand;
+    //CMD.SQL.Text := 'delete from "RDB$TRIGGERS"';
+    //CMD.Execute;
+{    CMD.SQL.Text := 'update rdb$triggers set rdb$trigger_inactive = 1';
+    CMD.Execute;
+    CMD.SQL.Text := 'delete from "RDB$INDICES" where RDB$SYSTEM_FLAG = 0';
+    CMD.Execute;
+    CMD.Close;
+    exit;}
+
     for i := 0 to TablesList.Lines.Count - 1 do
     begin
       s:= trim(TablesList.Lines[i]);
       Count := 0;
       if s <> '' then
       begin
+        DBOpen;
+
         try
-          ExportTable(s);
-        except
-          on E: Exception do
-            ResultMemo.Lines.Add(E.Message);
+          try
+            ExportTable(s);
+          except
+            on E: Exception do
+              ResultMemo.Lines.Add(E.Message);
+          end;
+        finally
+          DBClose;
         end;
 
         ResultMemo.Lines.Add(s + ' is exported: ' + IntToStr(Count));
@@ -154,8 +175,10 @@ begin
         Application.ProcessMessages;
       end;
     end;
+    ResultMemo.Lines.Add('Done.');
   finally
-    DBClose;
+    //CMD.Free;
+    //DBClose;
   end;
 end;
 
@@ -171,6 +194,7 @@ begin
   try
     CMD := Session.CreateCommand as TmncFBCommand;
     CMD.SQL.Text := 'select * from "'+TableName+'"';
+    CMD.SQL.Add('PLAN ("'+TableName+'" NATURAL)');
 
     CMD.Prepare;
 
