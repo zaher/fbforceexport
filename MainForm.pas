@@ -29,7 +29,6 @@ type
     Cancel: Boolean;
     Count: Int64; //here cuz safe from error/exceptions
   public
-    procedure ExportIt;
     procedure DBOpen;
     procedure DBClose;
     procedure ExportAll;
@@ -60,50 +59,13 @@ begin
     Cancel := True;
 end;
 
-procedure TForm1.ExportIt;
-var
-  CMD: TmncFBCommand;
-  aConnection: TmncFBConnection;
-  aSession: TmncFBSession;
-  t: ansiString;
-begin
-  //DefaultSystemCodePage := CP_NONE;
-  ResultMemo.Clear;
-  aConnection := TmncFBConnection.Create;
-  try
-    aConnection.Resource := DatabaseEdit.Text;
-    //Connection.CharacterSet := 'WIN1252';
-    aConnection.CharacterSet := 'NONE';
-    aConnection.UserName := 'sysdba';
-    aConnection.Password := 'masterkey';
-    aConnection.Open;
-    aSession := aConnection.CreateSession as TmncFBSession;
-    //Session.Params.Add('read_only');
-    aSession.Params.Add('ignore_limbo');
-    aSession.Start;
-    CMD := aSession.CreateCommand as TmncFBCommand;
-    CMD.SQL.Text := 'select * from "Accounts"';
-    CMD.Execute;
-    while not CMD.Done do
-    begin
-      t := #$D2#$C7#$E5#$D1; //CMD.Field['AccName'].AsString;
-      ResultMemo.Lines.Add(UTF8Encode(t));
-      CMD.Next;
-      break;
-    end;
-    CMD.Free;
-  finally
-    aSession.Free;
-    aConnection.Free;
-  end;
-end;
-
 procedure TForm1.DBOpen;
 begin
   csvCnn := TmncCSVConnection.Create;
   Connection := TmncFBConnection.Create;
   Connection.Resource := 'd:\temp\data.fdb';
   //Connection.CharacterSet := 'WIN1252';
+  //Connection.CharacterSet := 'UTF8';
   Connection.CharacterSet := 'NONE';
   Connection.UserName := 'sysdba';
   Connection.Password := 'masterkey';
@@ -136,7 +98,7 @@ procedure TForm1.ExportAll;
 var
   i: Integer;
   s: string;
-  CMD: TmncFBCommand;
+//  CMD: TmncFBCommand;
 begin
   Cancel := False;
   //DBOpen;
@@ -201,11 +163,8 @@ begin
     csvCMD := TmncCSVCommand.Create(csvSes, aStream, csvmWrite);
     try
 
-      for i := 0 to CMD.Columns.Count -1 do
-        csvCMD.Columns.Add(CMD.Columns[i].Name, dtString);
-
+      csvCMD.Columns.Clone(CMD.Columns, dtString);
       csvCMD.Prepare;
-
       CMD.Execute;
       while not CMD.Done do
       begin
@@ -245,7 +204,6 @@ end;
 
 procedure TForm1.Button1Click(Sender: TObject);
 begin
-  //ExportIt;
   ExportAll;
 end;
 
