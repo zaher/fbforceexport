@@ -13,12 +13,15 @@ type
 
   TForm1 = class(TForm)
     Button1: TButton;
+    Button2: TButton;
     DatabaseEdit: TEdit;
     Label1: TLabel;
+    OpenDialog: TOpenDialog;
     PathEdit: TEdit;
     ResultMemo: TMemo;
     TablesList: TMemo;
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
@@ -50,7 +53,8 @@ uses
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   TablesList.Lines.LoadFromFile(Application.Location + 'tables.txt');
-  InitEmbedMode(Application.Location + 'fb/fbembed.dll');
+  //if FileExists(Application.Location + 'fb/fbembed.dll') then
+    //InitEmbedMode(Application.Location + 'fb/fbembed.dll');
 end;
 
 procedure TForm1.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -63,7 +67,7 @@ procedure TForm1.DBOpen;
 begin
   csvCnn := TmncCSVConnection.Create;
   Connection := TmncFBConnection.Create;
-  Connection.Resource := 'd:\temp\data.fdb';
+  Connection.Resource := DatabaseEdit.Text;
   //Connection.CharacterSet := 'WIN1252';
   //Connection.CharacterSet := 'UTF8';
   Connection.CharacterSet := 'NONE';
@@ -152,7 +156,7 @@ var
   i: Integer;
 begin
   Count := 0;
-  aStream := TFileStream.Create('d:\temp\data\'+TableName+'.csv', fmCreate);
+  aStream := TFileStream.Create(IncludeTrailingPathDelimiter(PathEdit.Text)+TableName+'.csv', fmCreate);
   try
     CMD := Session.CreateCommand as TmncFBCommand;
     CMD.SQL.Text := 'select * from "'+TableName+'"';
@@ -205,6 +209,14 @@ end;
 procedure TForm1.Button1Click(Sender: TObject);
 begin
   ExportAll;
+end;
+
+procedure TForm1.Button2Click(Sender: TObject);
+begin
+  if OpenDialog.Execute then
+  begin
+    DatabaseEdit.Text := OpenDialog.FileName;
+  end;
 end;
 
 end.
