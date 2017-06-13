@@ -53,8 +53,8 @@ uses
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   TablesList.Lines.LoadFromFile(Application.Location + 'tables.txt');
-  //if FileExists(Application.Location + 'fb/fbembed.dll') then
-    //InitEmbedMode(Application.Location + 'fb/fbembed.dll');
+  if FileExists(Application.Location + 'fb/fbembed.dll') then
+    InitEmbedMode(Application.Location + 'fb/fbembed.dll');
 end;
 
 procedure TForm1.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
